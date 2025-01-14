@@ -1,27 +1,35 @@
 const express = require("express")
 const cors = require('cors')
-const  dotenv = require("dotenv")
+const dotenv = require("dotenv")
 const mongoose = require('mongoose')
 const connecttoDB = require("./config/db.js")
 const Project = require("./models/Project.js")
 const nodemailer = require('nodemailer')
 const bodyParser = require('body-parser')
-const path = require('path')
 
 dotenv.config()
 const PORT = process.env.PORT || 8000;
 
 const app = express()
 
-//middlewares
-app.use(cors())
+// middlewares
+app.use(cors({
+  // Replace this with your Vercel frontend URL once deployed
+  origin: ['http://localhost:3000', 'https://your-frontend-url.vercel.app'],
+  credentials: true
+}))
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true}));
 
-app.use(express.static(path.join(__dirname, "frontend/build")))
+// Remove static file serving since frontend is separate
+// app.use(express.static(path.join(__dirname, "frontend/build")))
 
+// Basic health check route
+app.get('/', (req, res) => {
+  res.json({ message: 'Backend API is running' });
+});
 
-//routes
+// routes
 app.get('/api/projects', async (req, res) => {
   try{
     const projects = await Project.find()
@@ -47,7 +55,7 @@ app.post('/api/sendmail', (req, res) => {
   const mailOptions = {
     from: email,
     to: process.env.EMAIL,
-    subject: `New Contact Form Submittion(PORTFOLIO): ${subject}`,
+    subject: `New Contact Form Submission(PORTFOLIO): ${subject}`,
     text: `Name: ${name}\nEmail: ${email}\nPhone: ${phone}\n\nMessage:\n${message}`,
   }
 
@@ -56,15 +64,16 @@ app.post('/api/sendmail', (req, res) => {
       console.error("Error sending mail: ",error)
       return res.status(500).json({ success: false, message: "Failed to send mail. "})
     } else {
-      console.log("Email send: ", info.response)
-      return res.status(200).json({ success: true, message: "Email send successfully!"})
+      console.log("Email sent: ", info.response)
+      return res.status(200).json({ success: true, message: "Email sent successfully!"})
     }
   })
 })
 
-app.get('*', (req,res) => {
-  res.sendFile(path.join(__dirname, 'frontend/build', 'index.html'))
-})
+// Remove the catch-all route since we're not serving frontend
+// app.get('*', (req,res) => {
+//   res.sendFile(path.join(__dirname, 'frontend/build', 'index.html'))
+// })
 
 connecttoDB()
   .then(() => {
@@ -73,6 +82,6 @@ connecttoDB()
     })
   })
   .catch((err) => {
-    console.error("Failed to connect to the server")
+    console.error("Failed to connect to the server:", err)
     process.exit(1);
   })
