@@ -15,7 +15,7 @@ const app = express()
 // middlewares
 app.use(cors({
   // Replace this with your Vercel frontend URL once deployed
-  origin: ['http://localhost:3000', 'https://your-frontend-url.vercel.app'],
+  origin: "*",
   credentials: true
 }))
 app.use(bodyParser.json())
